@@ -1,0 +1,79 @@
+# Created by .ignore support plugin (hsz.mobi)
+target/
+*/target/*
+*/.git/*
+!.mvn/wrapper/maven-wrapper.jar
+/apollo-cache-dir/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+/.apt_generated/
+/.classpath
+/.factorypath
+/.project
+/.settings/
+/.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+/.idea
+.idea/
+/.idea/libraries
+
+### NetBeans ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+/build/
+node_modules/
+/node_modules
+*.hprof
+
+### Eclipse ###
+.eclipse/
+.DS_Store
+.gradle/
+classes/
+/.eclipse
+generated-src
+package-lock.json
+
+### Compiled class file ###
+*.class
+/classes/
+/classes
+target/
+/target/
+/target
+*/target/*
+/target/archive-tmp
+/target/classes
+/target/generated-sources
+/target/maven-archiver
+/target/maven-status
+/target/test-classes
+
+### Package Files #
+*.war
+*.war.original
+*.zip
+*.rar
+/out/
+
+### Log file ###
+*.log
+*.out
+
+

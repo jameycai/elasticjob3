@@ -40,91 +40,39 @@ public class ElasticJobConfig {
     private LeaderService leaderService = null;
 
 
-	private String zkConnect = "192.168.67.23:2181";
+	@Autowired
+	private ZookeeperRegistryCenter zookeeperRegistryCenter;
 
 
-//	@Resource
-//	private ZookeeperRegistryCenter regCenter;
-
-//    /** 采集器collection 分组 */
-//    private String groupId = "";
-    
-//    /** 分片算法---根据作业名的哈希值对服务器列表进行轮转的分片策略*/
-//    //private final static String ROTATESERVERBYNAMEJOBSHARDINGSTRATEGY = "com.dangdang.ddframe.job.lite.api.strategy.impl.RotateServerByNameJobShardingStrategy";
-//	private final static String ROTATESERVERBYNAMEJOBSHARDINGSTRATEGY = "com.dangdang.ddframe.job.lite.api.strategy.impl.OdevitySortByNameJobShardingStrategy";
-
-
-	/**
-	 * 任务名
-	 * @Title: getJobName
-	 * @param jobName
-	 * @return
-	 */
-	private static String getJobName(String jobName) {
-//		String tenantId = "caijinpeng";
-//		String groupId = "wlkj";
-//		String appIdNodePath = tenantId + "/" + groupId;
-//		return ZooKeeperConstant.PATH_PROBE_CLUSTER + "/" + appIdNodePath + "/" + jobName;
-		return jobName;
-	}
-	
 	/**
 	 * 创建任务调度
 	 */
     public void springJobScheduler(SimpleJob simpleJob, final String cron, final String shardingTotalCount) {
     	try {
-//			if (StringUtils.isNotEmpty(cron) && StringUtils.isNotEmpty(shardingTotalCount)) {
-//				SpringJobScheduler springJobScheduler = new SpringJobScheduler(simpleJob, regCenter,
-//						getLiteJobConfiguration(simpleJob.getClass(), cron, Integer.parseInt(shardingTotalCount)));
-//				springJobScheduler.init();
-//			}
+			if (StringUtils.isNotEmpty(cron) && StringUtils.isNotEmpty(shardingTotalCount)) {
 
-			new ScheduleJobBootstrap(createRegistryCenter(), simpleJob, createJobConfiguration(simpleJob,cron,shardingTotalCount)).schedule();
+				new ScheduleJobBootstrap(zookeeperRegistryCenter, simpleJob, createJobConfiguration(simpleJob,cron,shardingTotalCount)).schedule();
+
+			}
     	} catch(Exception e) {
     		log.error("springJobScheduler(): Create job scheduler exception " + simpleJob.getClass().getCanonicalName(), e);
     	}
     }
-	private CoordinatorRegistryCenter createRegistryCenter() {
-		ZookeeperConfiguration zookeeperConfiguration = new ZookeeperConfiguration(zkConnect, ZooKeeperConstant.ZK_NAMESPACE);
 
-		zookeeperConfiguration.setSessionTimeoutMilliseconds(60000);
-		zookeeperConfiguration.setConnectionTimeoutMilliseconds(60000);
-		int zkBaseSleepTimeMilliseconds = 3000;
-		zookeeperConfiguration.setBaseSleepTimeMilliseconds(zkBaseSleepTimeMilliseconds);
-		int zkMaxSleepTimeMilliseconds = 10000;
-		zookeeperConfiguration.setMaxSleepTimeMilliseconds(zkMaxSleepTimeMilliseconds);
-		zookeeperConfiguration.setMaxRetries(5);
-		//zookeeperConfiguration.setDigest("digest:wlkjAdminzk:Wlkj@2021zbvn1aok8i");
-		CoordinatorRegistryCenter regCenter = new ZookeeperRegistryCenter(zookeeperConfiguration);
-		regCenter.init();
-		return regCenter;
-	}
 	private static JobConfiguration createJobConfiguration(SimpleJob simpleJob, final String cron, final String shardingTotalCount) {
-		//String jobClassName = jobClass.getCanonicalName();
-		//String jobName = getJobName(simpleJob.getClass().getSimpleName());
 
 		///JobConfiguration jobConfig = JobConfiguration.newBuilder("cn.com.elasticjob.schedule.MyTaskSchedulerJob", ConvertUtil.Obj2int(shardingTotalCount)).cron(cron).build();
 		JobConfiguration jobConfig = JobConfiguration.newBuilder(simpleJob.getClass().getName(), ConvertUtil.Obj2int(shardingTotalCount)).cron(cron).build();
 		return jobConfig;
 	}
-//
-//    /**
-//     *任务配置
-//     */
-//    private LiteJobConfiguration getLiteJobConfiguration(final Class<? extends SimpleJob> jobClass, final String cron, final int shardingTotalCount) {
-//    	String jobClassName = jobClass.getCanonicalName();
-//    	String jobName = getJobName(jobClass.getSimpleName());
-//    	log.info("getLiteJobConfiguration(): Create elastic job: " + jobName + ", cron:" + cron + ", shardingCount:" + shardingTotalCount);
-//        return LiteJobConfiguration.newBuilder(new SimpleJobConfiguration(JobCoreConfiguration.newBuilder(
-//        		jobName, cron, shardingTotalCount).build(), jobClassName)).jobShardingStrategyClass(ROTATESERVERBYNAMEJOBSHARDINGSTRATEGY).overwrite(true).build();
-//    }
+
     
 	/**
 	 * 主采集服务选举
 	 */
 	public void collectionLeaderElection(String jobName) {
 		//leaderService = new LeaderService(createRegistryCenter(), "cn.com.elasticjob.schedule.MyTaskSchedulerJob");
-		leaderService = new LeaderService(createRegistryCenter(), jobName);
+		leaderService = new LeaderService(zookeeperRegistryCenter, jobName);
 		leaderInfo();
 	}
 	

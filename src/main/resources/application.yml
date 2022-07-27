@@ -2,6 +2,9 @@ spring:
   profiles:
     active: dev
 
+server:
+  port: 28007
+
 wsat:
   needFilterIp: 2.0.0.1
 
@@ -10,7 +13,12 @@ elasticjob:
     type: RDB
   regCenter:
     serverLists: 192.168.67.23:2181
-    namespace: elasticjob-lite-springboot333
+    namespace: elasticjob3x-lite-springboot-zk-001
+    sessionTimeoutMilliseconds: 60000
+    connectionTimeoutMilliseconds: 60000
+    baseSleepTimeMilliseconds: 20000
+    maxSleepTimeMilliseconds: 60000
+    digest: wlkjAdminzk:Wlkj@2021zbvn1aok8i
 #  jobs:
 #    simpleJob:
 #      elasticJobClass: org.apache.shardingsphere.elasticjob.lite.example.job.SpringBootSimpleJob

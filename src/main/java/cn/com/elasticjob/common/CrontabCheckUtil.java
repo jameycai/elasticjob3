@@ -1,6 +1,6 @@
 package cn.com.elasticjob.common;
 
-import cn.com.elasticjob.constants.StaticValues;
+import cn.com.elasticjob.constants.GlobalConstant;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
@@ -31,9 +31,9 @@ public class CrontabCheckUtil {
 		//设置采集频率
 		int frequency = 3;
 		String strMin = taskInterval;
-		if(StringUtils.isNotEmpty(taskInterval) && taskInterval.indexOf(StaticValues.DH) > -1){
+		if(StringUtils.isNotEmpty(taskInterval) && taskInterval.indexOf(GlobalConstant.DH) > -1){
 			//可能是Crontab表达式，目前暂时解析取分钟位置值
-			String[] cron = taskInterval.split(StaticValues.DH);
+			String[] cron = taskInterval.split(GlobalConstant.DH);
 			if(cron != null && cron.length > 1){
 				strMin = cron[1];
 			}
@@ -65,7 +65,7 @@ public class CrontabCheckUtil {
 			Integer.parseInt(strInterval.trim());
 			bCrontab = false;
 		} catch(Exception ex) {
-			if(strInterval.contains(StaticValues.XH) || strInterval.contains(StaticValues.XG) || strInterval.contains(StaticValues.ZHX) || strInterval.contains(StaticValues.DH)){
+			if(strInterval.contains(GlobalConstant.XH) || strInterval.contains(GlobalConstant.XG) || strInterval.contains(GlobalConstant.ZHX) || strInterval.contains(GlobalConstant.DH)){
 				bCrontab = true;
 			}
 		}

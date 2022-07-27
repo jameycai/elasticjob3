@@ -4,12 +4,14 @@ import cn.com.elasticjob.bean.DeviceVo;
 import cn.com.elasticjob.common.ConvertUtil;
 import cn.com.elasticjob.common.DateTimeUtil;
 import cn.com.elasticjob.common.InetAddressUtil;
+import cn.com.elasticjob.common.LocalYamlConfig;
 import cn.com.elasticjob.constants.GlobalConstant;
 import cn.com.elasticjob.constants.RedisKeyConstant;
 import cn.com.elasticjob.schedule.cluster.ZNodeUpdate;
 import cn.com.elasticjob.schedule.dispatch.TaskDispatchService;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shardingsphere.elasticjob.api.ShardingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,7 +179,18 @@ public abstract class AbstractElasticJobTask {
 		Map<Integer, String> localShardingMap = new HashMap<>(8);
 		try {
 			String ip = InetAddressUtil.getLocalIp();
-			String port = System.getProperty(GlobalConstant.CONFIG_SERVER_PORT_KEY, GlobalConstant.CONFIG_SERVER_PORT_DEFAULT_VALUE+"");
+			String port = System.getProperty(GlobalConstant.CONFIG_SERVER_PORT_KEY);
+			if (StringUtils.isBlank(port)) {
+				Map<String, Object> properties = LocalYamlConfig.initConfigProperties("bootstrap.yml");
+				if(null!=properties){
+					port = ConvertUtil.Obj2Str(properties.get("server.port"));
+				}
+			}
+			if (StringUtils.isBlank(port)) {
+				port = GlobalConstant.CONFIG_SERVER_PORT_DEFAULT_VALUE + "";
+				log.warn("Get server.port is empty, set default port={}", port);
+			}
+
 			List<String> shardindList = zNodeUpdate.getShardingByIp(ip, port);
 			if(shardindList != null) {
 				shardindList.stream().distinct().forEach(x->localShardingMap.put(ConvertUtil.Obj2int(x), ""));

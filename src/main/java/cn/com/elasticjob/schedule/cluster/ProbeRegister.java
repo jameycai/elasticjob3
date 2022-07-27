@@ -1,9 +1,7 @@
 package cn.com.elasticjob.schedule.cluster;
 
 
-import cn.com.elasticjob.common.InetAddressUtil;
-import cn.com.elasticjob.common.JVMInfo;
-import cn.com.elasticjob.common.ThreadPool;
+import cn.com.elasticjob.common.*;
 import cn.com.elasticjob.constants.GlobalConstant;
 import cn.com.elasticjob.constants.ZooKeeperConstant;
 import cn.com.elasticjob.schedule.MyTaskSchedulerJob;
@@ -19,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -82,8 +81,18 @@ public class ProbeRegister extends AbstractZNodeListener {
             host = InetAddressUtil.getLocalHostName();
             port = System.getProperty(GlobalConstant.CONFIG_SERVER_PORT_KEY);
             if (StringUtils.isBlank(port)) {
+                Map<String, Object> properties = LocalYamlConfig.initConfigProperties("bootstrap.yml");
+                if(null!=properties){
+                    port = ConvertUtil.Obj2Str(properties.get("server.port"));
+                }
+            }
+            if (StringUtils.isBlank(port)) {
                 port = GlobalConstant.CONFIG_SERVER_PORT_DEFAULT_VALUE + "";
                 log.warn("Get server.port is empty, set default port={}", port);
+            }
+
+            if(StringUtils.isNotBlank(port)){
+                System.setProperty(GlobalConstant.CONFIG_SERVER_PORT_KEY, port);
             }
         } catch (Exception e) {
             log.warn("initHost: exception!", e);

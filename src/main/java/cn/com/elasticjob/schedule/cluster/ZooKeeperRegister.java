@@ -34,16 +34,21 @@ public class ZooKeeperRegister {
 	private static final Logger log = LoggerFactory.getLogger(ZooKeeperRegister.class);
 
 
+	@Value("${elasticjob.regCenter.serverLists}")
 	private String zkConnect = "192.168.67.23:2181";
 
-	@Value("${zookeeper.connection.timeout:60000}")
+	@Value("${elasticjob.regCenter.namespace}")
+	private String zkNameSpace;
+
+	@Value("${elasticjob.regCenter.connectionTimeoutMilliseconds:60000}")
 	private int connectionTimeoutMs;
-	@Value(("${zookeeper.session.timeout:60000}"))
+	@Value("${elasticjob.regCenter.sessionTimeoutMilliseconds:60000}")
 	private int sessionTimeoutMs;
 
-	private String isUseZKSecurity = "false";
-	@Value("${zookeeper.password:Wlkj@2021zbvn1aok8i}")
-	private String zkPassword;
+	private String isUseZKSecurity = "true";
+
+	@Value("${elasticjob.regCenter.digest}")
+	private String digest;
 
 
 	/**
@@ -52,8 +57,10 @@ public class ZooKeeperRegister {
 	@PostConstruct
 	private void init() {
 	    if (StringUtils.isEmpty(zkConnect)) {
-        	 log.warn("Can't get zk.connect from [/conf/application.properties or consul config], zkConnect is null.");
+        	 log.warn("Can't get zk.connect from [application.yml or consul config], zkConnect is null.");
         }
+
+		this.zkNameSpace = ConvertUtil.Obj2Str(this.zkNameSpace,ZooKeeperConstant.ZK_NAMESPACE);
 
 	    if (connectionTimeoutMs < 9000) {
 			connectionTimeoutMs = 60000;
@@ -67,7 +74,7 @@ public class ZooKeeperRegister {
 		this.isUseZKSecurity = ConvertUtil.Obj2Str(this.isUseZKSecurity, "true");
 
 		// ZK密码
-		zkPassword = ConvertUtil.Obj2Str(zkPassword, ZooKeeperConstant.ZK_PASSWORD);
+		this.digest = ConvertUtil.Obj2Str(this.digest, ZooKeeperConstant.ZK_USER+":"+ZooKeeperConstant.ZK_PASSWORD);
 	}
 
 
@@ -79,49 +86,45 @@ public class ZooKeeperRegister {
 	public CuratorFramework getZkClient() throws Exception{
 		CuratorFramework client = null;
 		try {
-			// 默认是全局
-			String zkNameSpace = ZooKeeperConstant.ZK_NAMESPACE;
-			// ZK用户名称
-			String zkUser = ZooKeeperConstant.ZK_USER;
 
 			//1000 是重试间隔时间基数，5 是重试次数
 			RetryPolicy retryPolicy = new RetryNTimes(5, 1000);
 
-//			if(StringUtils.isNotBlank(isUseZKSecurity) && "true".equalsIgnoreCase(isUseZKSecurity)){
-//				//默认创建的根节点是没有做权限控制的 ---- by caijinpeng
-//				ACLProvider aclProvider = new ACLProvider() {
-//					private List<ACL> acl ;
-//					@Override
-//					public List<ACL> getDefaultAcl() {
-//						if(acl ==null){
-//							ArrayList<ACL> acl = ZooDefs.Ids.CREATOR_ALL_ACL;
-//							acl.clear();
-//							acl.add(new ACL(ZooDefs.Perms.ALL, new Id("auth", zkUser+":"+zkPassword) ));
-//							this.acl = acl;
-//						}
-//						return acl;
-//					}
-//					@Override
-//					public List<ACL> getAclForPath(String path) {
-//						return acl;
-//					}
-//				};
-//
-//				String scheme = ZooKeeperConstant.ZK_AUTHSCHEME;
-//				byte[] auth = (zkUser+":"+zkPassword).getBytes();
-//
-//				client = CuratorFrameworkFactory.builder().aclProvider(aclProvider)
-//						.authorization(scheme, auth)
-//						.connectString(zkConnect.trim())
-//						.retryPolicy(retryPolicy)
-//						.connectionTimeoutMs(connectionTimeoutMs)
-//						.sessionTimeoutMs(sessionTimeoutMs)
-//						.namespace(zkNameSpace)
-//						.canBeReadOnly(false)
-//						.defaultData(null)
-//						.build();
-//
-//			}else {
+			if(StringUtils.isNotBlank(isUseZKSecurity) && "true".equalsIgnoreCase(isUseZKSecurity)){
+				//默认创建的根节点是没有做权限控制的 ---- by caijinpeng
+				ACLProvider aclProvider = new ACLProvider() {
+					private List<ACL> acl ;
+					@Override
+					public List<ACL> getDefaultAcl() {
+						if(acl ==null){
+							ArrayList<ACL> acl = ZooDefs.Ids.CREATOR_ALL_ACL;
+							acl.clear();
+							acl.add(new ACL(ZooDefs.Perms.ALL, new Id("auth", digest) ));
+							this.acl = acl;
+						}
+						return acl;
+					}
+					@Override
+					public List<ACL> getAclForPath(String path) {
+						return acl;
+					}
+				};
+
+				String scheme = ZooKeeperConstant.ZK_AUTHSCHEME;
+				byte[] auth = digest.getBytes();
+
+				client = CuratorFrameworkFactory.builder().aclProvider(aclProvider)
+						.authorization(scheme, auth)
+						.connectString(zkConnect.trim())
+						.retryPolicy(retryPolicy)
+						.connectionTimeoutMs(connectionTimeoutMs)
+						.sessionTimeoutMs(sessionTimeoutMs)
+						.namespace(zkNameSpace)
+						.canBeReadOnly(false)
+						.defaultData(null)
+						.build();
+
+			}else {
 				client = CuratorFrameworkFactory.builder()
 						.connectString(zkConnect.trim())
 						.retryPolicy(retryPolicy)
@@ -132,7 +135,7 @@ public class ZooKeeperRegister {
 						.defaultData(null)
 						.build();
 
-//			}
+			}
 			client.start();
 
 		} catch(Throwable ex){
